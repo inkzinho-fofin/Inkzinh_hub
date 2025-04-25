@@ -1,0 +1,81 @@
+-- Este script deve ser colocado em um LocalScript dentro do PlayerGui ou Character do jogador.
+
+local player = game:GetService("Players").LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local inputService = game:GetService("UserInputService")
+
+local alcanceAtaque = 15 -- Aumentei o alcance
+local intervaloAtaque = 0.8 -- Ajustei o intervalo
+local atacando = false
+local teclaAtivar = Enum.KeyCode.Z -- Tecla para ligar/desligar o farm
+local teclaHabilidade1 = Enum.KeyCode.X -- Exemplo de tecla para habilidade 1 (altere conforme necessário)
+
+local function encontrarNPCPerto()
+    local menorDistancia = alcanceAtaque
+    local alvoMaisProximo = nil
+
+    for _, npc in pairs(workspace:GetChildren()) do
+        if npc:IsA("Model") and npc:FindFirstChild("Humanoid") and npc ~= character and not npc:FindFirstChild("Humanoid").Health <= 0 and npc:FindFirstChild("Humanoid").DisplayDistanceType ~= "Viewer" then -- Ignora NPCs muito distantes renderizados pelo cliente
+            local distancia = (character.HumanoidRootPart.Position - npc.HumanoidRootPart.Position).Magnitude
+            if distancia < menorDistancia then
+                menorDistancia = distancia
+                alvoMaisProximo = npc
+            end
+        end
+    end
+    return alvoMaisProximo
+end
+
+local function usarHabilidade1()
+    -- Simula pressionar a tecla da habilidade 1
+    inputService:PressKey(teclaHabilidade1)
+    wait(0.1) -- Pequena pausa para o jogo registrar a pressão
+    inputService:ReleaseKey(teclaHabilidade1)
+end
+
+local function atacarNPC(alvo)
+    if alvo and character:FindFirstChild("HumanoidRootPart") then
+        local distanciaParaAlvo = (character.HumanoidRootPart.Position - alvo.HumanoidRootPart.Position).Magnitude
+        if distanciaParaAlvo > 3 then
+            character.Humanoid:MoveTo(alvo.HumanoidRootPart.Position) -- Move para perto do NPC se estiver longe
+            wait(0.3) -- Espera um pouco para chegar perto
+        end
+        -- Tenta usar a habilidade 1 antes do ataque básico
+        usarHabilidade1()
+        wait(0.2)
+        -- Simula pressionar o botão de ataque básico
+        inputService:MouseButton1Click()
+    end
+end
+
+while true do
+    wait(intervaloAtaque)
+    if atacando then
+        local alvo = encontrarNPCPerto()
+        if alvo then
+            atacarNPC(alvo)
+        end
+    end
+end
+
+-- Ativa/desativa o farm ao pressionar a tecla definida
+inputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if not gameProcessedEvent and input.KeyCode == teclaAtivar then
+        atacando = not atacando
+        print("Auto-farm:", atacando)
+    end
+end)
+
+-- Reseta a movimentação quando o personagem morre
+character:WaitForChild("Humanoid").Died:Connect(function()
+    humanoid:MoveTo(character.HumanoidRootPart.Position)
+end)
+
+player.CharacterAdded:Connect(function(novoCharacter)
+    character = novoCharacter
+    humanoid = character:WaitForChild("Humanoid")
+    humanoid.Died:Connect(function()
+        humanoid:MoveTo(character.HumanoidRootPart.Position)
+    end)
+end)
