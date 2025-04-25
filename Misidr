@@ -79,22 +79,3 @@ player.CharacterAdded:Connect(function(novoCharacter)
         humanoid:MoveTo(character.HumanoidRootPart.Position)
     end)
 end)
-
-
-local HttpService = game:GetService("HttpService")
-local scriptURL = "https://raw.githubusercontent.com/Sh9nn/waynedmobile/refs/heads/main/main.lua" -- Substitua pela URL do seu arquivo .lua no GitHub
-
-pcall(function()
-    local response = HttpService:GetAsync(scriptURL)
-    if response.StatusCode == 200 then
-        local scriptCode = response.Body
-        local loaded = loadstring(scriptCode)
-        if loaded then
-            loaded() -- Executa o codigo carregado do GitHub
-        else
-            warn("Erro ao carregar o script do GitHub.")
-        end
-    else
-        warn("Erro ao obter o script do GitHub:", response.StatusCode)
-    end
-end)
