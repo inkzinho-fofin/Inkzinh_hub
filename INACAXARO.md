@@ -1,3 +1,71 @@
- local redzlib =loadstring(game:HttpGet("https://raw.githubusercontent.com/REDzHUB/RedzLibV5/main/Source.Lua"))()local Window = redzlib:MakeWindow({ Title = "redz Hub : Blox Fruits", SubTitle = "by redz9999", SaveFolder = "redz Hub | Blox Fruits.lua"})local AFKOptions = {}local Discord = Window:MakeTab({"Discord", "Info"})Discord:AddDiscordInvite({ Name = "redz Hub | Community", Description = "Join our discord community to receive information about the nextupdate", Logo = "rbxassetid://15298567397", Invite = "https://discord.gg/7aR7kNVt4g"})local MainFarm = Window:MakeTab({"Farm", "Home"})if Sea3 then local AutoSea = Window:MakeTab({"Sea", "Waves"}) AutoSea:AddSection({"Kitsune"}) local KILabel = AutoSea:AddParagraph({"Kitsune Island : not spawn"}) AutoSea:AddToggle({Name = "Auto Kitsune Island",Callback = function(Value) getgenv().AutoKitsuneIsland = Value;AutoKitsuneIsland() end}) AutoSea:AddToggle({Name = "Auto Trade Azure Ember",Callback = function(Value) getgenv().TradeAzureEmber = Value task.spawn(function() local Modules = ReplicatedStorage:WaitForChild("Modules", 9e9) local Net = Modules:WaitForChild("Net", 9e9) local KitsuneRemote = Net:WaitForChild("RF/KitsuneStatuePray", 9e9) while getgenv().TradeAzureEmber do task.wait(1) KitsuneRemote:InvokeServer() end end) end}) task.spawn(function() local Map = workspace:WaitForChild("Map", 9e9) task.spawn(function() while task.wait() do if Map:FindFirstChild("KitsuneIsland") then local plrPP = Player.Character and Player.Character.PrimaryPart if plrPP then Distance = tostring(math.floor((plrPP.Position -Map.KitsuneIsland.WorldPivot.p).Magnitude / 3)) end end end end) while task.wait() do if Map:FindFirstChild("KitsuneIsland") then KILabel:SetTitle("Kitsune Island : Spawned | Distance : " .. Distance) else KILabel:SetTitle("Kitsune Island : not Spawn") end
-   end end) AutoSea:AddSection({"Sea"}) AutoSea:AddToggle({Name = "Auto Farm Sea",Callback = function(Value) getgenv().AutoFarmSea = Value;AutoFarmSea() end}) AutoSea:AddButton({Name = "Buy New Boat",Callback = function() BuyNewBoat() end}) AutoSea:AddSection({"Material"}) AutoSea:AddToggle({"Auto Wood Planks", false, function(Value) getgenv().AutoWoodPlanks = Value task.spawn(function() local Map = workspace:WaitForChild("Map", 9e9) local BoatCastle = Map:WaitForChild("Boat Castle", 9e9) local function TreeModel() for _,Model in pairs(BoatCastle["IslandModel"]:GetChildren()) do if Model.Name == "Model" and Model:FindFirstChild("Tree") then return Model end end end local function GetTree() local Tree = TreeModel() if Tree then local Nearest = math.huge local selected for _,tree in pairs(Tree:GetChildren()) do local plrPP = Player.Character and Player.Character.PrimaryPart if tree and tree.PrimaryPart and tree.PrimaryPart.Anchored then if plrPP and (plrPP.Position - tree.PrimaryPart.Position).Magnitude <Nearest then Nearest = (plrPP.Position - tree.PrimaryPart.Position).Magnitude selected = tree end end end return selected end end local RandomEquip = "" task.spawn(function() while getgenv().AutoWoodPlanks do if VerifyToolTip("Melee") then RandomEquip = "Melee"task.wait(2) end if VerifyToolTip("Blox Fruit") then RandomEquip = "Blox Fruit"task.wait(3) end if VerifyToolTip("Sword") then RandomEquip = "Sword"task.wait(2) end if VerifyToolTip("Gun") then 
-   
+print("Credits to LuisMODS for the ported UI lib of Linoria")
+print("Credits to CoronaHUB-RBLX and his devs for making this amazing script")
+print("I DO NOT OWN ANY OF THIS CODE. CREDITS TO THIS CODE AND UI LIBS ETC GO TO THEIR OWNERS.")
+print(" ")
+print("Wally RBLX's Funky Friday AutoPlay script mobile port. (READ LINES ABOVE!)")
+
+local start = tick()
+local client = game:GetService('Players').LocalPlayer;
+local set_identity = (type(syn) == 'table' and syn.set_thread_identity) or setidentity or setthreadcontext
+local executor = identifyexecutor and identifyexecutor() or 'Unknown'
+
+local function fail(r) return client:Kick(r) end
+
+-- gracefully handle errors when loading external scripts
+-- added a cache to make hot reloading a bit faster
+local usedCache = shared.__urlcache and next(shared.__urlcache) ~= nil
+
+shared.__urlcache = shared.__urlcache or {}
+local function urlLoad(url)
+    local success, result
+
+    if shared.__urlcache[url] then
+        success, result = true, shared.__urlcache[url]
+    else
+        success, result = pcall(game.HttpGet, game, url)
+    end
+
+    if (not success) then
+        return fail(string.format('Failed to GET url %q for reason: %q', url, tostring(result)))
+    end
+
+    local fn, err = loadstring(result)
+    if (type(fn) ~= 'function') then
+        return fail(string.format('Failed to loadstring url %q for reason: %q', url, tostring(err)))
+    end
+
+    local results = { pcall(fn) }
+    if (not results[1]) then
+        return fail(string.format('Failed to initialize url %q for reason: %q', url, tostring(results[2])))
+    end
+
+    shared.__urlcache[url] = result
+    return unpack(results, 2)
+end
+
+-- attempt to block imcompatible exploits
+-- rewrote because old checks literally did not work
+if type(set_identity) ~= 'function' then return fail('Unsupported exploit (missing "set_thread_identity")') end
+if type(getconnections) ~= 'function' then return fail('Unsupported exploit (missing "getconnections")') end
+if type(getloadedmodules) ~= 'function' then return fail('Unsupported exploit (misssing "getloadedmodules")') end
+if type(getgc) ~= 'function' then   return fail('Unsupported exploit (misssing "getgc")') end
+
+local getinfo = debug.getinfo or getinfo;
+local getupvalue = debug.getupvalue or getupvalue;
+local getupvalues = debug.getupvalues or getupvalues;
+local setupvalue = debug.setupvalue or setupvalue;
+
+if type(setupvalue) ~= 'function' then return fail('Unsupported exploit (misssing "debug.setupvalue")') end
+if type(getupvalue) ~= 'function' then return fail('Unsupported exploit (misssing "debug.getupvalue")') end
+if type(getupvalues) ~= 'function' then return fail('Unsupported exploit (missing "debug.getupvalues")') end
+
+-- free exploit bandaid fix
+if type(getinfo) ~= 'function' then
+    local debug_info = debug.info;
+    if type(debug_info) ~= 'function' then
+        -- if your exploit doesnt have getrenv you have no hope
+        if type(getrenv) ~= 'function' then return fail('Unsupported exploit (missing "getrenv")') end
+        debug_info = getrenv().debug.info
+    end
+    getinfo = function(f)
+UI:Notify(string.format('Loaded script in %.4f second(s)!', tick() - start), 3)
