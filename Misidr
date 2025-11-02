@@ -1,81 +1,75 @@
--- Este script deve ser colocado em um LocalScript dentro do PlayerGui ou Character do jogador.
+# Script para alterar a taxa de atualização do monitor para 225Hz
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
 
-local player = game:GetService("Players").LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-local inputService = game:GetService("UserInputService")
+public class DisplaySettings {
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DEVMODE {
+        private const int CCHDEVICENAME = 32;
+        private const int CCHFORMNAME = 32;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = CCHDEVICENAME)]
+        public string dmDeviceName;
+        public ushort dmSpecVersion;
+        public ushort dmDriverVersion;
+        public ushort dmSize;
+        public ushort dmDriverExtra;
+        public uint dmFields;
+        public int dmPositionX;
+        public int dmPositionY;
+        public uint dmDisplayOrientation;
+        public uint dmDisplayFixedOutput;
+        public short dmColor;
+        public short dmDuplex;
+        public short dmYResolution;
+        public short dmTTOption;
+        public short dmCollate;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = CCHFORMNAME)]
+        public string dmFormName;
+        public ushort dmLogPixels;
+        public uint dmBitsPerPel;
+        public uint dmPelsWidth;
+        public uint dmPelsHeight;
+        public uint dmDisplayFlags;
+        public uint dmDisplayFrequency;
+        public uint dmICMMethod;
+        public uint dmICMIntent;
+        public uint dmMediaType;
+        public uint dmDitherType;
+        public uint dmReserved1;
+        public uint dmReserved2;
+        public uint dmPanningWidth;
+        public uint dmPanningHeight;
+    }
 
-local alcanceAtaque = 15 -- Aumentei o alcance
-local intervaloAtaque = 0.8 -- Ajustei o intervalo
-local atacando = false
-local teclaAtivar = Enum.KeyCode.Z -- Tecla para ligar/desligar o farm
-local teclaHabilidade1 = Enum.KeyCode.X -- Exemplo de tecla para habilidade 1 (altere conforme necessário)
+    [DllImport("user32.dll")]
+    public static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref DEVMODE devMode);
 
-local function encontrarNPCPerto()
-    local menorDistancia = alcanceAtaque
-    local alvoMaisProximo = nil
+    [DllImport("user32.dll")]
+    public static extern int ChangeDisplaySettings(ref DEVMODE devMode, int flags);
 
-    for _, npc in pairs(workspace:GetChildren()) do
-        if npc:IsA("Model") and npc:FindFirstChild("Humanoid") and npc ~= character and not npc:FindFirstChild("Humanoid").Health <= 0 and npc:FindFirstChild("Humanoid").DisplayDistanceType ~= "Viewer" then -- Ignora NPCs muito distantes renderizados pelo cliente
-            local distancia = (character.HumanoidRootPart.Position - npc.HumanoidRootPart.Position).Magnitude
-            if distancia < menorDistancia then
-                menorDistancia = distancia
-                alvoMaisProximo = npc
-            end
-        end
-    end
-    return alvoMaisProximo
-end
+    public static bool SetDisplayFrequency(uint targetFrequency) {
+        DEVMODE dm = new DEVMODE();
+        dm.dmSize = (ushort)Marshal.SizeOf(typeof(DEVMODE));
+        if (EnumDisplaySettings(null, -1, ref dm)) {
+            dm.dmDisplayFrequency = targetFrequency;
+            int result = ChangeDisplaySettings(ref dm, 0);
+            return result == 0;
+        }
+        return false;
+    }
+}
+"@
 
-local function usarHabilidade1()
-    -- Simula pressionar a tecla da habilidade 1
-    inputService:PressKey(teclaHabilidade1)
-    wait(0.1) -- Pequena pausa para o jogo registrar a pressão
-    inputService:ReleaseKey(teclaHabilidade1)
-end
+# Tenta alterar a taxa de atualização para 225Hz
+$result = [DisplaySettings]::SetDisplayFrequency(225)
 
-local function atacarNPC(alvo)
-    if alvo and character:FindFirstChild("HumanoidRootPart") then
-        local distanciaParaAlvo = (character.HumanoidRootPart.Position - alvo.HumanoidRootPart.Position).Magnitude
-        if distanciaParaAlvo > 3 then
-            character.Humanoid:MoveTo(alvo.HumanoidRootPart.Position) -- Move para perto do NPC se estiver longe
-            wait(0.3) -- Espera um pouco para chegar perto
-        end
-        -- Tenta usar a habilidade 1 antes do ataque básico
-        usarHabilidade1()
-        wait(0.2)
-        -- Simula pressionar o botão de ataque básico
-        inputService:MouseButton1Click()
-    end
-end
+if ($result) {
+    Write-Output "Taxa de atualização alterada para 225Hz com sucesso."
+} else {
+    Write-Output "Falha ao alterar a taxa de atualização. Verifique se o seu monitor suporta 225Hz e se você tem privilégios administrativos."
+}
 
-while true do
-    wait(intervaloAtaque)
-    if atacando then
-        local alvo = encontrarNPCPerto()
-        if alvo then
-            atacarNPC(alvo)
-        end
-    end
-end
-
--- Ativa/desativa o farm ao pressionar a tecla definida
-inputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    if not gameProcessedEvent and input.KeyCode == teclaAtivar then
-        atacando = not atacando
-        print("Auto-farm:", atacando)
-    end
-end)
-
--- Reseta a movimentação quando o personagem morre
-character:WaitForChild("Humanoid").Died:Connect(function()
-    humanoid:MoveTo(character.HumanoidRootPart.Position)
-end)
-
-player.CharacterAdded:Connect(function(novoCharacter)
-    character = novoCharacter
-    humanoid = character:WaitForChild("Humanoid")
-    humanoid.Died:Connect(function()
-        humanoid:MoveTo(character.HumanoidRootPart.Position)
-    end)
-end)
+# Instrução para limitar FPS dentro do jogo (exemplo de comando de console)
+# Essa parte deve ser inserida na configuração do jogo, se suportado.
+Write-Output "Para limitar o FPS a 120, insira o comando 'fps_max 120' no console do jogo, se suportado."
