@@ -1,0 +1,22 @@
+
+
+def configurar_jogo():
+    # Conectar ao jogo
+    if jogo_api.conectar():
+        print("Conectado ao jogo!")
+
+        # Fixar FPS em 120
+        jogo_api.configurar_fps(120)
+        print("FPS fixado em 120.")
+
+        # Configurar taxa de atualização do monitor para 225Hz
+        jogo_api.configurar_taxa_atualizacao(225)
+        print("Taxa de atualização de renderização configurada para 225Hz.")
+
+    else:
+        print("Falha ao conectar ao jogo.")
+
+# Executar a configuração ao iniciar
+if __name__ == "__main__":
+    configurar_jogo()
+    
